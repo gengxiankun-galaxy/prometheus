@@ -1,0 +1,43 @@
+---
+# tasks file for prometheus
+
+- block:
+
+    - name: 清除旧容器与部署目录
+      shell: 'docker-compose -f {{ OPT_PATH }}/prometheus/docker-compose.yaml rm -fsva; rm -rf {{ OPT_PATH }}/prometheus'
+      ignore_errors: true
+
+    - name: 预处理 - 创建部署目录
+      shell: '[[ ! -d "{{ OPT_PATH }}/prometheus" ]] && mkdir -vp {{ OPT_PATH }}/prometheus'
+      ignore_errors: true
+
+    - name: 部署 docker-compose.yaml
+      template: src=docker-compose.yaml.j2 dest={{ OPT_PATH }}/prometheus/docker-compose.yaml
+
+    - name: 部署配置文件
+      copy: src=files/prometheus.yml dest={{ OPT_PATH }}/prometheus/prometheus.yml
+
+    - name: 部署服务
+      shell: 'docker-compose -f {{ OPT_PATH }}/prometheus/docker-compose.yaml up -d'
+
+  tags: [never, prometheus]
+  when: PROMETHEUS_ENABLE is defined and PROMETHEUS_ENABLE == "true"
+
+- block:
+
+    - name: 清除旧容器与部署目录
+      shell: 'docker-compose -f {{ OPT_PATH }}/node-exporter/docker-compose.yaml rm -fsva; rm -rf {{ OPT_PATH }}/node-exporter'
+      ignore_errors: true
+
+    - name: 预处理 - 创建部署目录
+      shell: '[[ ! -d "{{ OPT_PATH }}/node-exporter" ]] && mkdir -vp {{ OPT_PATH }}/node-exporter'
+      ignore_errors: true
+
+    - name: 部署 docker-compose-node-exporter.yaml
+      template: src=docker-compose-node-exporter.yaml.j2 dest={{ OPT_PATH }}/node-exporter/docker-compose-node-exporter.yaml
+
+    - name: 部署服务
+      shell: 'docker-compose -f {{ OPT_PATH }}/node-exporter/docker-compose-node-exporter.yaml up -d'
+
+  tags: [never, node-exporter]
+  when: NODE_EXPORTER_ENABLE is defined and NODE_EXPORTER_ENABLE == "true"
